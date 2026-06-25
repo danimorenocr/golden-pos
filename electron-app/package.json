@@ -1,0 +1,12 @@
+{
+  "name": "golden-pos-app",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^39.2.6"
+  }
+}
