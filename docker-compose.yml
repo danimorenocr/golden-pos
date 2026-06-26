@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${DB_USER:-microadmin}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-12345678}
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
@@ -21,7 +21,7 @@ services:
       retries: 5
 
   consul:
-    image: hashicorp/consul:1.16
+    image: hashicorp/consul:1.15
     container_name: golden-consul
     restart: always
     command: agent -dev -client=0.0.0.0
@@ -29,7 +29,7 @@ services:
       - "8500:8500"
 
   ms-auth:
-    image: ghcr.io/danimorenocr/ms-auth:latest
+    image: ghcr.io/danimorenocr/ms-auth-san-agustin:latest
     container_name: ms-auth
     restart: always
     environment:
@@ -47,7 +47,7 @@ services:
         condition: service_started
 
   ms-inventory:
-    image: ghcr.io/danimorenocr/ms-inventory:latest
+    image: ghcr.io/danimorenocr/ms-inventory-san-agustin:latest
     container_name: ms-inventory
     restart: always
     environment:
@@ -82,26 +82,10 @@ services:
       consul:
         condition: service_started
 
-  ms-reconocimiento:
-    image: ghcr.io/danimorenocr/ms-reconocimiento:latest
-    container_name: ms-reconocimiento
-    restart: always
-    environment:
-      DATABASE_URL: postgresql://${DB_USER:-microadmin}:${DB_PASSWORD:-12345678}@db:5432/face_db
-      DISCOVERY_MODE: consul
-      CONSUL_HOST: consul
-      CONSUL_PORT: 8500
-      PORT: 4005
-      SERVICE_HOST: ms-reconocimiento
-      SERVICE_PORT: 4005
-    depends_on:
-      db:
-        condition: service_healthy
-      consul:
-        condition: service_started
+
 
   ms-gateway:
-    image: ghcr.io/danimorenocr/ms-gateway:latest
+    image: ghcr.io/danimorenocr/ms-gateway-san-agustin:latest
     container_name: ms-gateway
     restart: always
     ports:
