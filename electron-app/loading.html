@@ -39,10 +39,10 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      width: 450px;
-      height: 320px;
+      width: 480px;
+      height: 460px;
       border-radius: 24px;
-      padding: 40px;
+      padding: 30px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -53,10 +53,10 @@
     }
 
     .logo-container {
-      margin-bottom: 24px;
+      margin-bottom: 16px;
       position: relative;
-      width: 80px;
-      height: 80px;
+      width: 70px;
+      height: 70px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -77,7 +77,7 @@
 
     .logo-icon {
       position: absolute;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 800;
       color: var(--text);
       font-family: 'Outfit', sans-serif;
@@ -86,9 +86,9 @@
 
     h1 {
       font-family: 'Outfit', sans-serif;
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       letter-spacing: -0.5px;
       background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
       background-clip: text;
@@ -97,9 +97,9 @@
     }
 
     p.subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-muted);
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
 
     .status-box {
@@ -112,6 +112,29 @@
       border: 1px solid rgba(16, 185, 129, 0.15);
       animation: pulse 2s infinite ease-in-out;
       -webkit-app-region: no-drag;
+      margin-bottom: 15px;
+    }
+
+    .terminal {
+      width: 100%;
+      height: 180px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      text-align: left;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #a7f3d0;
+      white-space: pre-wrap;
+      word-break: break-all;
+      -webkit-app-region: no-drag;
+    }
+
+    .terminal div {
+      margin-bottom: 4px;
+      line-height: 1.4;
     }
 
     @keyframes spin {
@@ -134,6 +157,59 @@
     <h1>Carnes San Agustín</h1>
     <p class="subtitle">Sistema de Inventario y Punto de Venta</p>
     <div class="status-box">Iniciando microservicios...</div>
+    <div class="terminal" id="terminal-logs">Esperando arranque de Docker...
+</div>
   </div>
+
+  <script>
+    const terminalLogs = document.getElementById('terminal-logs');
+    const statusBox = document.querySelector('.status-box');
+
+    if (window.dockerAPI) {
+      window.dockerAPI.onDockerStatus((message) => {
+        const cleanMessage = message.trim();
+        if (!cleanMessage) return;
+
+        // Limpiar el estado inicial
+        if (terminalLogs.textContent.includes('Esperando arranque')) {
+          terminalLogs.textContent = '';
+        }
+
+        // Crear una nueva línea de log
+        const div = document.createElement('div');
+        div.textContent = cleanMessage;
+        terminalLogs.appendChild(div);
+        
+        // Auto scroll
+        terminalLogs.scrollTop = terminalLogs.scrollHeight;
+        
+        // Actualizar etiqueta del estado
+        const msgLower = cleanMessage.toLowerCase();
+        if (msgLower.includes('pulling') || msgLower.includes('download')) {
+          statusBox.textContent = "Descargando imágenes de Docker...";
+        } else if (msgLower.includes('creating')) {
+          statusBox.textContent = "Creando contenedores...";
+        } else if (msgLower.includes('starting') || msgLower.includes('recreate')) {
+          statusBox.textContent = "Iniciando servicios...";
+        } else if (msgLower.includes('started') || msgLower.includes('healthy')) {
+          statusBox.textContent = "Servicios listos.";
+        }
+      });
+
+      window.dockerAPI.onDockerError((errorMessage) => {
+        statusBox.textContent = "Error al iniciar Docker";
+        statusBox.style.background = "rgba(239, 68, 68, 0.1)";
+        statusBox.style.color = "#f87171";
+        statusBox.style.border = "1px solid rgba(239, 68, 68, 0.15)";
+        
+        const div = document.createElement('div');
+        div.style.color = "#f87171";
+        div.style.fontWeight = "bold";
+        div.textContent = `[ERROR] ${errorMessage}`;
+        terminalLogs.appendChild(div);
+        terminalLogs.scrollTop = terminalLogs.scrollHeight;
+      });
+    }
+  </script>
 </body>
 </html>

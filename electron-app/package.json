@@ -19,6 +19,24 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "extraResources": [
+      {
+        "from": "../docker-compose.yml",
+        "to": "docker-compose.yml"
+      },
+      {
+        "from": "../.env",
+        "to": ".env"
+      },
+      {
+        "from": "../init-db.sh",
+        "to": "init-db.sh"
+      },
+      {
+        "from": "../init-db.sql",
+        "to": "init-db.sql"
+      }
+    ]
   }
 }
