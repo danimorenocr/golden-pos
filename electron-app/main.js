@@ -68,44 +68,68 @@ function createWindow() {
   const dockerCwd = app.isPackaged 
     ? process.resourcesPath 
     : path.join(__dirname, '../');
-  writeLog(`Iniciando Docker Compose desde: ${dockerCwd}`);
+  writeLog(`Descargando actualización de imágenes de Docker (pull) desde: ${dockerCwd}`);
   
-  const dockerProcess = spawn('docker', ['compose', 'up', '-d'], { cwd: dockerCwd, shell: true });
+  // Primero actualizar las imágenes de GitHub Container Registry
+  const pullProcess = spawn('docker', ['compose', 'pull'], { cwd: dockerCwd, shell: true });
 
-  dockerProcess.stdout.on('data', (data) => {
+  pullProcess.stdout.on('data', (data) => {
     const message = data.toString();
-    writeLog(`[DOCKER STDOUT] ${message}`);
+    writeLog(`[DOCKER PULL STDOUT] ${message}`);
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('docker-status', message);
     }
   });
 
-  dockerProcess.stderr.on('data', (data) => {
+  pullProcess.stderr.on('data', (data) => {
     const message = data.toString();
-    writeLog(`[DOCKER STDERR] ${message}`);
+    writeLog(`[DOCKER PULL STDERR] ${message}`);
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('docker-status', message);
     }
   });
 
-  dockerProcess.on('error', (err) => {
-    writeLog(`[ERROR DOCKER SPAWN] ${err.message}`);
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('docker-error', err.message);
-    }
-  });
+  pullProcess.on('close', (pullCode) => {
+    writeLog(`[DOCKER PULL CLOSE] docker compose pull finalizó con código ${pullCode}`);
+    writeLog(`Iniciando contenedores con Docker Compose en: ${dockerCwd}`);
 
-  dockerProcess.on('close', (code) => {
-    writeLog(`[DOCKER CLOSE] docker compose exited with code ${code}`);
-    if (code === 0) {
-      writeLog(`[DOCKER SUCCESS] Docker Compose iniciado correctamente.`);
-      verificarServicio();
-    } else {
-      writeLog(`[DOCKER FAILED] docker compose exited with non-zero code ${code}`);
+    const dockerProcess = spawn('docker', ['compose', 'up', '-d'], { cwd: dockerCwd, shell: true });
+
+    dockerProcess.stdout.on('data', (data) => {
+      const message = data.toString();
+      writeLog(`[DOCKER STDOUT] ${message}`);
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('docker-error', `Docker falló al iniciar (código ${code})`);
+        mainWindow.webContents.send('docker-status', message);
       }
-    }
+    });
+
+    dockerProcess.stderr.on('data', (data) => {
+      const message = data.toString();
+      writeLog(`[DOCKER STDERR] ${message}`);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('docker-status', message);
+      }
+    });
+
+    dockerProcess.on('error', (err) => {
+      writeLog(`[ERROR DOCKER SPAWN] ${err.message}`);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('docker-error', err.message);
+      }
+    });
+
+    dockerProcess.on('close', (code) => {
+      writeLog(`[DOCKER CLOSE] docker compose exited with code ${code}`);
+      if (code === 0) {
+        writeLog(`[DOCKER SUCCESS] Docker Compose iniciado correctamente.`);
+        verificarServicio();
+      } else {
+        writeLog(`[DOCKER FAILED] docker compose exited with non-zero code ${code}`);
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('docker-error', `Docker falló al iniciar (código ${code})`);
+        }
+      }
+    });
   });
 
   // 4. Detener Docker al cerrar la ventana de Electron
