@@ -156,7 +156,19 @@ function verificarServicio() {
   http.get('http://localhost', (res) => {
     // Si responde (cualquier código de estado), cargamos la URL real de la app
     writeLog(`¡Frontend detectado! Estado HTTP: ${res.statusCode}. Redirigiendo a http://localhost...`);
-    mainWindow.loadURL('http://localhost');
+    
+    // Limpiar el caché de la sesión de Electron antes de cargar la URL
+    mainWindow.webContents.session.clearCache()
+      .then(() => {
+        writeLog("Caché de Electron limpiado correctamente.");
+        return mainWindow.loadURL('http://localhost', {
+          extraHeaders: 'pragma: no-cache\nCache-Control: no-cache'
+        });
+      })
+      .catch((err) => {
+        writeLog(`Error al limpiar el caché: ${err.message}. Cargando de todas formas...`);
+        mainWindow.loadURL('http://localhost');
+      });
   }).on('error', (err) => {
     // Si da error (puerto cerrado todavía), reintentamos en 1.5 segundos
     writeLog(`Frontend no disponible aún (Error: ${err.message}). Reintentando en 1.5 segundos...`);
