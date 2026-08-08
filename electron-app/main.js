@@ -36,8 +36,8 @@ function createWindow() {
   writeLog(`Variables de entorno clave: PATH=${process.env.PATH}`);
 
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1024,
+    height: 768,
     show: false, // No la mostramos hasta que cargue el HTML correspondiente
     webPreferences: {
       nodeIntegration: false,
@@ -147,21 +147,51 @@ function createWindow() {
   });
 }
 
-// Función recursiva para verificar si el Frontend ya está listo
-let intentos = 0;
-function verificarServicio() {
-  intentos++;
-  writeLog(`Verificando servicio frontend en http://localhost... (Intento #${intentos})`);
-  
-  http.get('http://localhost', (res) => {
-    // Si responde (cualquier código de estado), cargamos la URL real de la app
-    writeLog(`¡Frontend detectado! Estado HTTP: ${res.statusCode}. Redirigiendo a http://localhost...`);
-    mainWindow.loadURL('http://localhost');
-  }).on('error', (err) => {
-    // Si da error (puerto cerrado todavía), reintentamos en 1.5 segundos
-    writeLog(`Frontend no disponible aún (Error: ${err.message}). Reintentando en 1.5 segundos...`);
-    setTimeout(verificarServicio, 1500);
+function verificarUrl(url) {
+  return new Promise((resolve) => {
+    const req = http.get(url, (res) => {
+      if (res.statusCode === 200) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+    req.on('error', () => {
+      resolve(false);
+    });
+    req.setTimeout(1000, () => {
+      req.destroy();
+      resolve(false);
+    });
+    req.end();
   });
+}
+
+// Función recursiva para verificar si el Frontend y los Microservicios ya están listos
+let intentos = 0;
+async function verificarServicio() {
+  intentos++;
+  writeLog(`Verificando servicios (Intento #${intentos})...`);
+  
+  const frontendReady = await verificarUrl('http://localhost');
+  if (!frontendReady) {
+    writeLog(`Frontend no disponible aún en http://localhost. Reintentando en 2 segundos...`);
+    setTimeout(verificarServicio, 2000);
+    return;
+  }
+  
+  writeLog(`Frontend detectado. Verificando estado de los microservicios (Auth, Inventory, Sales) a través del Gateway...`);
+  const authReady = await verificarUrl('http://localhost:3000/auth/health');
+  const inventoryReady = await verificarUrl('http://localhost:3000/inventory/health');
+  const salesReady = await verificarUrl('http://localhost:3000/sale/health');
+  
+  if (authReady && inventoryReady && salesReady) {
+    writeLog(`¡Todos los contenedores, microservicios y semillas (seeds) están listos! Redirigiendo a http://localhost...`);
+    mainWindow.loadURL('http://localhost');
+  } else {
+    writeLog(`Esperando inicialización de microservicios: Auth=${authReady ? 'LISTO' : 'ESPERANDO'}, Inventory=${inventoryReady ? 'LISTO' : 'ESPERANDO'}, Sales=${salesReady ? 'LISTO' : 'ESPERANDO'}. Reintentando en 2 segundos...`);
+    setTimeout(verificarServicio, 2000);
+  }
 }
 
 app.whenReady().then(createWindow);
