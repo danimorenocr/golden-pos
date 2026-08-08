@@ -1,6 +1,10 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
+
+ipcMain.on('get-app-version', (event) => {
+  event.returnValue = app.getVersion();
+});
 const { exec, spawn } = require('child_process');
 const http = require('http');
 const fs = require('fs');
