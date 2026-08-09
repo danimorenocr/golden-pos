@@ -8,6 +8,8 @@ on:
 jobs:
   release:
     runs-on: windows-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -23,6 +25,11 @@ jobs:
         run: |
           sed -i 's/:latest/:develop/g' docker-compose.yml
           cat docker-compose.yml
+
+      - name: Rename App for Dev environment
+        working-directory: ./electron-app
+        run: |
+          node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); pkg.name = 'golden-pos-app-dev'; pkg.appId = 'com.goldenpos.app.dev'; pkg.productName = 'Golden POS Dev'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
 
       - name: Install Electron App Dependencies
         working-directory: ./electron-app
