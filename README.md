@@ -113,3 +113,21 @@ Puedes configurar `electron-builder` para que publique de manera automática al 
      set GH_TOKEN=tu_personal_access_token
      npm run dist -- --publish always
      ```
+
+
+
+
+
+#### SUBIR RELEASED
+
+1. cambia la version en electron-app/package.json
+2. ejecuta npm run dist
+3. sube la release a GitHub
+
+```bash
+npm run dist
+```
+
+```bash
+npx electron-builder --win --publish always
+```

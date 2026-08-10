@@ -33,7 +33,7 @@ services:
     container_name: ms-auth
     restart: always
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-microadmin}:${DB_PASSWORD:-12345678}@db:5432/db_agustin_auth?schema=public
+      DATABASE_URL: ${DATABASE_AUTH_URL:-postgresql://microadmin:12345678@db:5432/db_agustin_auth?schema=public}
       DISCOVERY_MODE: consul
       CONSUL_HOST: consul
       CONSUL_PORT: 8500
@@ -51,7 +51,7 @@ services:
     container_name: ms-inventory
     restart: always
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-microadmin}:${DB_PASSWORD:-12345678}@db:5432/db_agustin_inventory?schema=public
+      DATABASE_URL: ${DATABASE_INVENTORY_URL:-postgresql://microadmin:12345678@db:5432/db_agustin_inventory?schema=public}
       DISCOVERY_MODE: consul
       CONSUL_HOST: consul
       CONSUL_PORT: 8500
@@ -69,7 +69,7 @@ services:
     container_name: ms-sales
     restart: always
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-microadmin}:${DB_PASSWORD:-12345678}@db:5432/db_agustin_sales?schema=public
+      DATABASE_URL: ${DATABASE_SALES_URL:-postgresql://microadmin:12345678@db:5432/db_agustin_sales?schema=public}
       DISCOVERY_MODE: consul
       CONSUL_HOST: consul
       CONSUL_PORT: 8500
