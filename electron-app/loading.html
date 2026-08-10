@@ -155,7 +155,7 @@
       <div class="logo-icon">SA</div>
     </div>
     <h1>Carnes San Agustín</h1>
-    <p class="subtitle">Sistema de Inventario y Punto de Venta</p>
+    <p class="subtitle" id="app-subtitle">Sistema de Inventario y Punto de Venta</p>
     <div class="status-box">Iniciando microservicios...</div>
     <div class="terminal" id="terminal-logs">Esperando arranque de Docker...
 </div>
@@ -164,6 +164,12 @@
   <script>
     const terminalLogs = document.getElementById('terminal-logs');
     const statusBox = document.querySelector('.status-box');
+    const subtitleEl = document.getElementById('app-subtitle');
+
+    if (window.appAPI && subtitleEl) {
+      const version = window.appAPI.getVersion();
+      subtitleEl.textContent = `Sistema de Inventario y Punto de Venta • v${version}`;
+    }
 
     if (window.dockerAPI) {
       window.dockerAPI.onDockerStatus((message) => {

@@ -1,5 +1,10 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
+
+ipcMain.on('get-app-version', (event) => {
+  event.returnValue = app.getVersion();
+});
 const { exec, spawn } = require('child_process');
 const http = require('http');
 const fs = require('fs');
@@ -44,6 +49,41 @@ function createWindow() {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     }
+  });
+
+  // Configuración de permisos y auto-selección de dispositivos para WebUSB y Web Serial
+  mainWindow.webContents.session.on('select-usb-device', (event, details, callback) => {
+    event.preventDefault();
+    if (details.deviceList && details.deviceList.length > 0) {
+      writeLog(`[USB] Auto-seleccionando dispositivo USB: ${details.deviceList[0].deviceName || 'Impresora/Caja'}`);
+      callback(details.deviceList[0].deviceId);
+    } else {
+      callback();
+    }
+  });
+
+  mainWindow.webContents.session.on('select-serial-port', (event, portList, webContents, callback) => {
+    event.preventDefault();
+    if (portList && portList.length > 0) {
+      writeLog(`[SERIAL] Auto-seleccionando puerto serial: ${portList[0].portName || portList[0].portId}`);
+      callback(portList[0].portId);
+    } else {
+      callback('');
+    }
+  });
+
+  mainWindow.webContents.session.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
+    if (permission === 'usb' || permission === 'serial') {
+      return true;
+    }
+    return false;
+  });
+
+  mainWindow.webContents.session.setDevicePermissionHandler((details) => {
+    if (details.deviceType === 'usb' || details.deviceType === 'serial') {
+      return true;
+    }
+    return false;
   });
 
   // 1. Mostrar la pantalla de carga inmediatamente
@@ -145,6 +185,39 @@ function createWindow() {
       app.quit();
     });
   });
+
+  // Configuración del Auto-Updater (Actualizaciones Automáticas de Electron)
+  autoUpdater.logger = {
+    info: (msg) => writeLog(`[UPDATER INFO] ${msg}`),
+    warn: (msg) => writeLog(`[UPDATER WARN] ${msg}`),
+    error: (msg) => writeLog(`[UPDATER ERROR] ${msg}`)
+  };
+
+  autoUpdater.on('checking-for-update', () => {
+    writeLog('[UPDATER] Buscando actualizaciones...');
+  });
+  autoUpdater.on('update-available', (info) => {
+    writeLog(`[UPDATER] Actualización disponible: Versión ${info.version}. Descargando...`);
+  });
+  autoUpdater.on('update-not-available', () => {
+    writeLog('[UPDATER] La aplicación está en la versión más reciente.');
+  });
+  autoUpdater.on('error', (err) => {
+    writeLog(`[UPDATER ERROR] Error durante la actualización: ${err.message}`);
+  });
+  autoUpdater.on('download-progress', (progressObj) => {
+    writeLog(`[UPDATER] Progreso de descarga: ${Math.round(progressObj.percent)}%`);
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    writeLog('[UPDATER] Actualización descargada con éxito. Se instalará automáticamente al cerrar la aplicación.');
+  });
+
+  // Solo buscar actualizaciones si la aplicación está empaquetada (producción)
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify();
+  } else {
+    writeLog('[UPDATER] Modo desarrollo detectado. Se omite la búsqueda de actualizaciones.');
+  }
 }
 
 function verificarUrl(url) {
