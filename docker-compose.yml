@@ -32,6 +32,7 @@ services:
     image: ghcr.io/danimorenocr/ms-auth-san-agustin:latest
     container_name: ms-auth
     restart: always
+    command: sh -c "npx prisma db push --schema=prisma/schema.prisma --accept-data-loss && npm run start"
     environment:
       DATABASE_URL: ${DATABASE_AUTH_URL:-postgresql://microadmin:12345678@db:5432/db_agustin_auth?schema=public}
       DISCOVERY_MODE: consul
@@ -50,6 +51,7 @@ services:
     image: ghcr.io/danimorenocr/ms-inventory-san-agustin:latest
     container_name: ms-inventory
     restart: always
+    command: sh -c "npx prisma db push --schema=prisma/schema.prisma --accept-data-loss && npm run start"
     environment:
       DATABASE_URL: ${DATABASE_INVENTORY_URL:-postgresql://microadmin:12345678@db:5432/db_agustin_inventory?schema=public}
       DISCOVERY_MODE: consul
@@ -68,6 +70,7 @@ services:
     image: ghcr.io/danimorenocr/ms-sales-san-agustin:latest
     container_name: ms-sales
     restart: always
+    command: sh -c "npx prisma db push --schema=prisma/schema.prisma --accept-data-loss && npm run start"
     environment:
       DATABASE_URL: ${DATABASE_SALES_URL:-postgresql://microadmin:12345678@db:5432/db_agustin_sales?schema=public}
       DISCOVERY_MODE: consul
