@@ -89,6 +89,7 @@ function createWindow() {
   // 1. Mostrar la pantalla de carga inmediatamente
   mainWindow.loadFile('loading.html');
   mainWindow.once('ready-to-show', () => {
+    mainWindow.maximize();
     mainWindow.show();
   });
 
@@ -240,29 +241,18 @@ function verificarUrl(url) {
   });
 }
 
-// Función recursiva para verificar si el Frontend y los Microservicios ya están listos
+// Función recursiva para verificar si el Frontend ya está listo
 let intentos = 0;
 async function verificarServicio() {
   intentos++;
   writeLog(`Verificando servicios (Intento #${intentos})...`);
   
   const frontendReady = await verificarUrl('http://localhost');
-  if (!frontendReady) {
-    writeLog(`Frontend no disponible aún en http://localhost. Reintentando en 2 segundos...`);
-    setTimeout(verificarServicio, 2000);
-    return;
-  }
-  
-  writeLog(`Frontend detectado. Verificando estado de los microservicios (Auth, Inventory, Sales) a través del Gateway...`);
-  const authReady = await verificarUrl('http://localhost:3000/auth/health');
-  const inventoryReady = await verificarUrl('http://localhost:3000/inventory/health');
-  const salesReady = await verificarUrl('http://localhost:3000/sale/health');
-  
-  if (authReady && inventoryReady && salesReady) {
-    writeLog(`¡Todos los contenedores, microservicios y semillas (seeds) están listos! Redirigiendo a http://localhost...`);
+  if (frontendReady) {
+    writeLog(`¡Frontend detectado! Redirigiendo a http://localhost...`);
     mainWindow.loadURL('http://localhost');
   } else {
-    writeLog(`Esperando inicialización de microservicios: Auth=${authReady ? 'LISTO' : 'ESPERANDO'}, Inventory=${inventoryReady ? 'LISTO' : 'ESPERANDO'}, Sales=${salesReady ? 'LISTO' : 'ESPERANDO'}. Reintentando en 2 segundos...`);
+    writeLog(`Frontend no disponible aún en http://localhost. Reintentando en 2 segundos...`);
     setTimeout(verificarServicio, 2000);
   }
 }
